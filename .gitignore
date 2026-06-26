@@ -1,0 +1,12 @@
+.cache/
+.codex-*.csv
+.codex-*.log
+.codex-web*.log
+.codex-web*.png
+__pycache__/
+exports/
+scripts/
+SITE_RECOMMENDATIONS.md
+data/*
+!data/
+!data/msi_game_dataset.json

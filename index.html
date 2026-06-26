@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#090e1b">
+    <title>Road to MSI</title>
+    <link rel="stylesheet" href="styles.css?v=25">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#inicio" aria-label="Road to MSI, inicio">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 48 48" role="presentation">
+            <path class="brand-mark-frame" d="M24 3 43 14v20L24 45 5 34V14Z" />
+            <path class="brand-mark-route" d="M12 14 24 8l12 6M12 34l12-8 12 8M24 8v18M12 14v20M36 14v20" />
+            <path class="brand-mark-core" d="m24 17 5 5-5 5-5-5Z" />
+          </svg>
+        </span>
+        <span><strong>ROAD TO MSI</strong><small>Manager mode</small></span>
+      </a>
+      <span id="dataset-meta" class="header-data">Loading data...</span>
+    </header>
+
+    <main id="inicio">
+      <section id="screen-start" class="screen start-screen" aria-labelledby="start-title">
+        <div id="start-art" class="start-art" aria-hidden="true">
+          <span class="geo geo-orbit"></span><span class="geo geo-diamond"></span><span class="geo geo-core"></span>
+          <span class="geo geo-square"></span><span class="geo geo-line"></span><span class="geo geo-triangle"></span>
+        </div>
+        <div class="start-copy">
+          <p class="eyebrow">SEASON 01 · ROAD TO MSI</p>
+          <h1 id="start-title">Your story starts<br>before the draft.</h1>
+          <p>Choose a crest. Build a roster one card at a time. Every decision will shape your road to MSI.</p>
+          <div class="start-actions"><button id="start-run" class="primary-button large-button" type="button">Start run <span>→</span></button><button id="open-tutorial" class="secondary-button tutorial-button" type="button">How to play</button></div>
+          <small class="data-note">Cards are based on real tournament statistics.</small>
+        </div>
+      </section>
+
+      <section id="tutorial-modal" class="tutorial-modal" role="dialog" aria-modal="true" aria-labelledby="tutorial-title" hidden>
+        <div class="tutorial-backdrop" data-close-tutorial></div>
+        <div class="tutorial-card">
+          <button id="close-tutorial" class="tutorial-close" type="button" aria-label="Close tutorial">×</button>
+          <p class="eyebrow">ROAD TO MSI · QUICK GUIDE</p>
+          <h2 id="tutorial-title">How the run works.</h2>
+          <div class="tutorial-steps">
+            <article><span>01</span><div><strong>Choose a crest</strong><p>Your identity supplies an opening team bonus.</p></div></article>
+            <article><span>02</span><div><strong>Build the roster</strong><p>Five player packs appear. Pick one card, then assign their role - off-role is possible, but risky.</p></div></article>
+            <article><span>03</span><div><strong>Lock tournament picks</strong><p>Choose five champions and assign one to each player. Those picks stay locked for the full run.</p></div></article>
+            <article><span>04</span><div><strong>Play out the match</strong><p>Draft power, player synergy and chemistry shape the simulation.</p></div></article>
+            <article><span>05</span><div><strong>Survive the bracket</strong><p>One loss sends you to Lower Bracket. A second loss ends the run; win the final to claim MSI.</p></div></article>
+          </div>
+          <section class="tutorial-scoring" aria-labelledby="tutorial-scoring-title">
+            <p class="eyebrow">TEAM SCORE · QUICK REFERENCE</p>
+            <h3 id="tutorial-scoring-title">What makes a strong team.</h3>
+            <div class="score-formula"><span>50% PLAYER</span><b>+</b><span>30% CHAMPION</span><b>+</b><span>20% SYNERGY</span></div>
+            <div class="tutorial-score-grid">
+              <article><strong>Player OVR</strong><p>Win rate, KDA, kill participation, damage, champion pool and match experience.</p></article>
+              <article><strong>Role fit</strong><p>Off-role costs player power. A champion naturally played in that position adds <b>+2 chemistry</b>.</p></article>
+              <article><strong>Team links</strong><p>Same historical team, shared regions, natural roles and crest connections all raise chemistry.</p></article>
+            </div>
+            <div class="region-rules">
+              <strong>REGION MIX</strong>
+              <span class="is-positive">Shared region · +1 chemistry per teammate</span>
+              <span class="is-positive">5 different regions · +15 Global lineup</span>
+              <span class="is-negative">4 from one region · -7 Limited international mix</span>
+              <span class="is-negative">5 from one region · -12 No international mix</span>
+            </div>
+          </section>
+          <button id="tutorial-start" class="primary-button" type="button">Start your run <span>→</span></button>
+        </div>
+      </section>
+
+      <section id="screen-identity" class="screen" aria-labelledby="identity-title" hidden>
+        <div class="screen-heading">
+          <p class="eyebrow">01 / 03 · THE CREST</p>
+          <h1 id="identity-title">Choose your team's<br>identity.</h1>
+          <p>Every player will be available later. First, decide how you want the tournament to remember you.</p>
+        </div>
+        <div id="team-options" class="team-options" aria-live="polite"></div>
+        <div class="screen-actions">
+          <button id="back-to-start" class="secondary-button" type="button">Back</button>
+          <button id="confirm-team" class="primary-button" type="button" disabled>Lock in crest <span>→</span></button>
+        </div>
+      </section>
+
+      <section id="screen-draft" class="screen" aria-labelledby="draft-title" hidden>
+        <div class="draft-topline">
+          <div>
+            <p class="eyebrow" id="draft-step">02 / 03 · RECRUITMENT</p>
+            <h1 id="draft-title">Choose a card.</h1>
+          </div>
+          <div class="selection-tools"><div id="draft-round" class="round-badge">ROUND 1 / 5</div><button id="player-reroll" class="reroll-button" type="button">REROLL · 3</button></div>
+        </div>
+        <p id="draft-instruction" class="screen-lead">Five players appear. Choose one, then decide which position they will play on your team.</p>
+
+        <div id="draft-candidates" class="draft-candidates" aria-live="polite"></div>
+
+        <section class="assignment-panel" aria-labelledby="assignment-title">
+          <div class="assignment-heading">
+            <div>
+              <p class="eyebrow">ASSIGNMENT</p>
+              <h2 id="assignment-title">Place them in a position.</h2>
+            </div>
+            <p id="assignment-note">Choose a card to unlock the open positions.</p>
+          </div>
+          <div id="role-placement" class="role-placement"></div>
+          <div id="player-bonuses" class="player-bonuses" aria-live="polite"></div>
+          <div class="risk-note"><strong>Risk:</strong> you can place a player outside their natural role. They will lose 9 performance points, but they may be the piece you need.</div>
+        </section>
+      </section>
+
+      <section id="screen-champion-selection" class="screen" aria-labelledby="champion-selection-title" hidden>
+        <div class="draft-topline champion-selection-topline">
+          <div>
+            <p id="champion-selection-stage" class="eyebrow">02 / 03 · TOURNAMENT PICKS</p>
+            <h1 id="champion-selection-title">Choose your<br>tournament champions.</h1>
+          </div>
+          <div class="selection-tools"><div id="champion-round" class="round-badge">ROUND 1 / 5</div><button id="champion-reroll" class="reroll-button" type="button">REROLL · 3</button></div>
+        </div>
+        <p id="champion-selection-instruction" class="screen-lead">Five champions appear. Choose one, then assign it to a player for the full tournament.</p>
+        <div id="tournament-champion-options" class="draft-champion-pool tournament-champion-options" aria-live="polite"></div>
+        <section class="pick-assignment tournament-pick-assignment" aria-labelledby="tournament-pick-assignment-title">
+          <div class="section-inline-heading"><div><p class="eyebrow">TOURNAMENT COMPOSITION</p><h2 id="tournament-pick-assignment-title">Choose a champion first.</h2></div><p id="tournament-pick-assignment-note">Each champion remains with its player until you swap it in the roster review.</p></div>
+          <div id="tournament-pick-slots" class="pick-assignment-slots"></div>
+        </section>
+      </section>
+
+      <section id="screen-review" class="screen" aria-labelledby="review-title" hidden>
+        <div class="review-hero">
+          <div id="review-emblem" class="review-emblem" aria-hidden="true">MSI</div>
+          <div>
+            <p class="eyebrow">03 / 03 · ROSTER LOCKED</p>
+            <h1 id="review-title">Your team is ready.</h1>
+            <p id="review-subtitle">This roster will carry your crest to MSI.</p>
+          </div>
+          <div class="chemistry-summary"><span>CHEMISTRY</span><strong id="review-chemistry">--</strong><small id="review-chemistry-label">BUILDING</small></div>
+        </div>
+        <div id="review-team" class="review-team" aria-label="Roster summary"></div>
+        <div class="review-footer">
+          <p>Lock in your run and reveal the eight-team double-elimination bracket before your first match.</p>
+          <div>
+            <span id="review-swap-note" class="swap-note" hidden></span>
+            <button id="review-swap" class="secondary-button" type="button" aria-pressed="false">Swap players</button>
+            <button id="review-swap-champions" class="secondary-button" type="button" aria-pressed="false">Swap champions</button>
+            <button id="begin-tournament" class="primary-button" type="button">Begin the road to glory <span>→</span></button>
+          </div>
+        </div>
+      </section>
+
+      <section id="screen-tournament" class="screen" aria-labelledby="tournament-title" hidden>
+        <div class="tournament-heading">
+          <div>
+            <p class="eyebrow">MSI DOUBLE ELIMINATION · 8 TEAMS</p>
+            <h1 id="tournament-title">The road to glory<br>has been drawn.</h1>
+            <p>Your team begins in the Upper Bracket. One loss sends you to the Lower Bracket; a second ends the run.</p>
+          </div>
+          <div class="tournament-rules"><span>UPPER</span><strong>1st loss</strong><i>↓</i><span>LOWER</span><strong>2nd loss = eliminated</strong></div>
+        </div>
+
+        <section class="next-series" aria-labelledby="next-series-title">
+          <div>
+            <p class="eyebrow">YOUR NEXT SERIES</p>
+            <h2 id="next-series-title">Upper Bracket · Round 1</h2>
+            <p id="next-series-copy">Your first opponent is waiting.</p>
+          </div>
+          <div id="next-series-match" class="next-series-match"></div>
+          <button id="start-first-draft" class="primary-button" type="button">Start first series <span>→</span></button>
+        </section>
+
+        <section class="bracket-section" aria-labelledby="bracket-title">
+          <div class="bracket-section-heading">
+            <div><p class="eyebrow">TOURNAMENT MAP</p><h2 id="bracket-title">Double-elimination bracket</h2></div>
+            <span class="bracket-legend"><i></i>Your path · <b></b>Next series</span>
+          </div>
+          <div id="bracket-board" class="bracket-board" aria-label="Tournament bracket"></div>
+        </section>
+      </section>
+      <section id="screen-match-draft" class="screen" aria-labelledby="match-draft-title" hidden>
+        <div class="match-heading">
+          <div>
+            <p id="match-draft-stage" class="eyebrow">UPPER BRACKET · ROUND 1</p>
+            <h1 id="match-draft-title">Draft against<br>your next rival.</h1>
+            <p id="match-draft-copy">Build the five picks that will carry your roster into the series.</p>
+          </div>
+          <div id="match-draft-score" class="match-draft-score"></div>
+        </div>
+
+        <section class="draft-status-panel" aria-label="Draft status">
+          <div><span>ROUND</span><strong id="match-draft-round">1 / 5</strong></div>
+          <div><span>YOUR MOVE</span><strong id="match-draft-instruction">Choose one champion to ban.</strong></div>
+          <div class="enemy-draft"><span>OPPONENT</span><div id="enemy-draft-list"></div></div>
+          <div class="your-draft"><span>YOUR DRAFT</span><div id="your-draft-list"></div></div>
+        </section>
+
+        <section class="champion-select" aria-labelledby="champion-select-title">
+          <div class="section-inline-heading">
+            <div><p class="eyebrow">CHAMPION POOL</p><h2 id="champion-select-title">Make your call.</h2></div>
+            <p id="champion-selection-note">Banned and picked champions leave the pool.</p>
+          </div>
+          <div id="draft-champion-pool" class="draft-champion-pool" aria-live="polite"></div>
+        </section>
+
+        <section class="pick-assignment" aria-labelledby="pick-assignment-title">
+          <div class="section-inline-heading">
+            <div><p class="eyebrow">PICK ASSIGNMENT</p><h2 id="pick-assignment-title">Choose a champion first.</h2></div>
+            <p id="pick-assignment-note">Every pick needs an unfilled player slot.</p>
+          </div>
+          <div id="pick-assignment-slots" class="pick-assignment-slots"></div>
+        </section>
+
+        <section class="draft-lineups" aria-label="Team compositions during draft">
+          <div class="draft-lineup your-lineup"><div><p class="eyebrow">YOUR TEAM</p><h2>Selected composition</h2></div><div id="your-draft-lineup" class="lineup-rows"></div></div>
+          <div class="draft-lineup rival-lineup"><div><p class="eyebrow">OPPONENT TEAM</p><h2 id="rival-lineup-title">Opponent composition</h2></div><div id="rival-draft-lineup" class="lineup-rows"></div></div>
+        </section>
+
+        <div class="draft-actions">
+          <span id="draft-power-preview">Complete the draft to calculate your match power.</span>
+          <button id="lock-match-draft" class="primary-button" type="button" disabled>Lock draft and simulate <span>→</span></button>
+        </div>
+      </section>
+
+      <section id="screen-simulation" class="screen" aria-labelledby="simulation-title" hidden>
+        <div class="match-heading simulation-heading">
+          <div>
+            <p id="simulation-stage" class="eyebrow">UPPER BRACKET · ROUND 1</p>
+            <h1 id="simulation-title">The series is<br>about to begin.</h1>
+            <p id="simulation-copy">Your draft and roster will now decide the opening match.</p>
+          </div>
+          <div id="simulation-score" class="match-draft-score"></div>
+        </div>
+
+        <section class="simulation-panel" aria-live="polite">
+          <div class="simulation-power"><div><span>YOUR POWER</span><strong id="simulation-player-power">--</strong></div><div><span>RIVAL POWER</span><strong id="simulation-rival-power">--</strong></div></div>
+          <div class="simulation-livebar">
+            <div class="match-clock"><span>GAME CLOCK</span><strong id="simulation-clock">00:00</strong></div>
+            <div class="match-phase"><span>PHASE</span><strong id="simulation-phase">PREGAME</strong></div>
+          </div>
+          <div id="simulation-result-banner" class="simulation-result-banner" hidden></div>
+          <div class="advantage-track"><span id="advantage-marker"></span></div>
+          <div id="simulation-events" class="simulation-events"><p>Press simulate to play out the match.</p></div>
+          <div class="simulation-actions">
+            <button id="simulate-match" class="primary-button" type="button">Simulate match <span>▶</span></button>
+            <button id="continue-bracket" class="primary-button" type="button" hidden>Continue to bracket <span>→</span></button>
+          </div>
+        </section>
+      </section>
+
+      <section id="screen-run-summary" class="screen" aria-labelledby="run-summary-title" hidden>
+        <div class="run-summary-hero">
+          <div id="run-summary-emblem" class="review-emblem" aria-hidden="true">MSI</div>
+          <div>
+            <p id="run-summary-kicker" class="eyebrow">RUN COMPLETE</p>
+            <h1 id="run-summary-title">Your MSI story ends here.</h1>
+            <p id="run-summary-copy">Every decision, pick and fight shaped this run.</p>
+          </div>
+          <div class="run-position"><span>FINAL POSITION</span><strong id="run-final-position">--</strong><small id="run-record">0-0 record</small></div>
+        </div>
+
+        <section class="run-metrics" aria-label="Run statistics">
+          <div><span>CHEMISTRY</span><strong id="run-chemistry">--</strong></div>
+          <div><span>WINS</span><strong id="run-wins">0</strong></div>
+          <div><span>RUN STAR</span><strong id="run-mvp">--</strong></div>
+          <div><span>LAST RIVAL</span><strong id="run-last-rival">--</strong></div>
+        </section>
+
+        <section class="run-roster-section" aria-labelledby="run-roster-title">
+          <div class="section-inline-heading"><div><p class="eyebrow">YOUR FINAL ROSTER</p><h2 id="run-roster-title">The five who carried the crest.</h2></div></div>
+          <div id="run-roster" class="run-roster"></div>
+        </section>
+
+        <section class="run-path-section" aria-labelledby="run-path-title">
+          <div class="section-inline-heading"><div><p class="eyebrow">RUN HISTORY</p><h2 id="run-path-title">Your bracket path.</h2></div></div>
+          <div id="run-history" class="run-history"></div>
+        </section>
+
+        <section class="run-bracket-section" aria-labelledby="run-bracket-title">
+          <div class="section-inline-heading"><div><p class="eyebrow">FINAL BRACKET</p><h2 id="run-bracket-title">The completed road to glory.</h2></div></div>
+          <div class="summary-bracket-scroll"><div id="summary-bracket" class="bracket-board" aria-label="Final tournament bracket"></div></div>
+        </section>
+
+        <div class="run-summary-actions">
+          <button id="share-run" class="secondary-button" type="button">Share result</button>
+          <button id="new-run" class="primary-button" type="button">Start a new run <span>→</span></button>
+        </div>
+      </section>
+    </main>
+    <footer class="site-footer" aria-label="Site footer">
+      <div class="footer-copy">
+        <span>Cards use simplified MSI tournament data and game-balanced ratings.</span>
+        <span>Developed by <a href="https://www.linkedin.com/in/adriaabadjuarez/" target="_blank" rel="noopener">AdriaBad</a>.</span>
+      </div>
+      <nav class="footer-links" aria-label="Footer links">
+        <a class="secondary-button footer-data-link" href="data.html">Data & ratings</a>
+        <a class="secondary-button footer-data-link" href="privacy.html">Privacy</a>
+        <a class="secondary-button footer-data-link" href="https://discord.gg/gjJNmkkz" target="_blank" rel="noopener">Feedback & rating complaints</a>
+        <a class="secondary-button footer-data-link" href="https://discord.gg/gjJNmkkz" target="_blank" rel="noopener">Want this game?</a>
+      </nav>
+    </footer>
+    <script src="app.js?v=22"></script>
+  </body>
+</html>

@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#090e1b">
+    <title>Road to MSI · Data & ratings</title>
+    <link rel="stylesheet" href="styles.css?v=25">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="index.html#inicio" aria-label="Road to MSI, inicio">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 48 48" role="presentation">
+            <path class="brand-mark-frame" d="M24 3 43 14v20L24 45 5 34V14Z" />
+            <path class="brand-mark-route" d="M12 14 24 8l12 6M12 34l12-8 12 8M24 8v18M12 14v20M36 14v20" />
+            <path class="brand-mark-core" d="m24 17 5 5-5 5-5-5Z" />
+          </svg>
+        </span>
+        <span><strong>ROAD TO MSI</strong><small>Manager mode</small></span>
+      </a>
+      <span id="data-meta" class="header-data">Loading data...</span>
+    </header>
+
+    <main class="data-page" id="data-app">
+      <section class="data-hero" aria-labelledby="data-title">
+        <div>
+          <p class="eyebrow">MSI DATA ROOM</p>
+          <h1 id="data-title">Data &<br>ratings.</h1>
+          <p>Search the exact simplified dataset loaded by the game. Ratings are normalized for play balance, so they are not official esports rankings.</p>
+        </div>
+        <a class="secondary-button data-back-link" href="index.html#inicio">Back to game</a>
+      </section>
+
+      <section class="data-controls" aria-label="Data filters">
+        <div class="data-search">
+          <label for="data-search">Search</label>
+          <input id="data-search" type="search" autocomplete="off" placeholder="Player, team, champion, region...">
+        </div>
+        <div class="data-select">
+          <label for="data-year">MSI year</label>
+          <select id="data-year">
+            <option value="all">All years</option>
+          </select>
+        </div>
+        <div class="data-view-toggle" role="group" aria-label="Dataset view">
+          <button class="is-active" type="button" data-view="players" aria-pressed="true">Players</button>
+          <button type="button" data-view="champions" aria-pressed="false">Champions</button>
+          <button type="button" data-view="teams" aria-pressed="false">Teams</button>
+        </div>
+      </section>
+
+      <section id="data-summary" class="data-summary" aria-label="Dataset summary"></section>
+
+      <section class="rating-method" aria-labelledby="rating-method-title">
+        <div>
+          <p class="eyebrow">RATING METHOD</p>
+          <h2 id="rating-method-title">What the numbers mean.</h2>
+        </div>
+        <div class="rating-formulas">
+          <span><b>Player OVR</b> WR 28 · KDA 20 · KP 16 · DPM 14 · pool 12 · games 10</span>
+          <span><b>Champion OVR</b> win rate + presence + KDA, clamped 58-96</span>
+          <span><b>Team difficulty</b> 68% avg player OVR + 22% team win rate + placement bonus</span>
+        </div>
+      </section>
+
+      <section class="data-table-shell" aria-labelledby="data-table-title">
+        <div class="data-table-heading">
+          <div>
+            <p class="eyebrow" id="data-view-label">PLAYERS</p>
+            <h2 id="data-table-title">Player cards</h2>
+          </div>
+          <span id="data-result-count">0 rows</span>
+        </div>
+        <div id="data-table" class="data-table-wrap" aria-live="polite"></div>
+        <div class="data-load-more-wrap">
+          <button id="data-load-more" class="data-load-more" type="button" hidden>Show 10 more</button>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer" aria-label="Site footer">
+      <div class="footer-copy">
+        <span>Ratings are generated from the simplified game dataset.</span>
+        <span>Developed by <a href="https://www.linkedin.com/in/adriaabadjuarez/" target="_blank" rel="noopener">AdriaBad</a>.</span>
+      </div>
+      <nav class="footer-links" aria-label="Footer links">
+        <a class="secondary-button footer-data-link" href="index.html#inicio">Back to game</a>
+        <a class="secondary-button footer-data-link" href="privacy.html">Privacy</a>
+        <a class="secondary-button footer-data-link" href="https://discord.gg/gjJNmkkz" target="_blank" rel="noopener">Feedback & rating complaints</a>
+        <a class="secondary-button footer-data-link" href="https://discord.gg/gjJNmkkz" target="_blank" rel="noopener">Want this game?</a>
+      </nav>
+    </footer>
+    <script src="data-page.js?v=22"></script>
+  </body>
+</html>

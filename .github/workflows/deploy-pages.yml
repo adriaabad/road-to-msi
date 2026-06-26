@@ -1,0 +1,68 @@
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - index.html
+      - data.html
+      - privacy.html
+      - styles.css
+      - app.js
+      - data-page.js
+      - role-sprite.webp
+      - data/msi_game_dataset.json
+      - .github/workflows/deploy-pages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Build minimal static site
+        env:
+          CLOUDFLARE_WEB_ANALYTICS_TOKEN: ${{ vars.CLOUDFLARE_WEB_ANALYTICS_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p _site/data
+          cp index.html data.html privacy.html styles.css app.js data-page.js role-sprite.webp _site/
+          cp data/msi_game_dataset.json _site/data/msi_game_dataset.json
+          touch _site/.nojekyll
+
+          if [ -n "${CLOUDFLARE_WEB_ANALYTICS_TOKEN:-}" ]; then
+            for file in _site/index.html _site/data.html _site/privacy.html; do
+              sed -i "s#</head>#  <script defer src=\"https://static.cloudflareinsights.com/beacon.min.js\" data-cf-beacon='{\"token\":\"${CLOUDFLARE_WEB_ANALYTICS_TOKEN}\"}'></script>\n  </head>#" "$file"
+            done
+          fi
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
