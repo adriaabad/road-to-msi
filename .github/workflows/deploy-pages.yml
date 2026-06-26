@@ -34,7 +34,7 @@ jobs:
 
       - name: Build minimal static site
         env:
-          CLOUDFLARE_WEB_ANALYTICS_TOKEN: ${{ vars.CLOUDFLARE_WEB_ANALYTICS_TOKEN }}
+          CLOUDFLARE_WEB_ANALYTICS_TOKEN: ${{ vars.CLOUDFLARE_WEB_ANALYTICS_TOKEN || '1d2fa0e4ed1d4e73a9a6348299b69774' }}
         run: |
           set -euo pipefail
           mkdir -p _site/data
