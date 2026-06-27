@@ -236,6 +236,9 @@ const CHAMPION_IMAGE_KEYS = {
   "Vel'Koz": "Velkoz",
   Wukong: "MonkeyKing",
 };
+const SHARE_IMAGE_WIDTH = 1200;
+const SHARE_IMAGE_HEIGHT = 780;
+const SHARE_IMAGE_NAME = "road-to-msi-result.png";
 
 const state = {
   dataset: null,
@@ -584,28 +587,14 @@ function bindEvents() {
   els.simulateMatch.addEventListener("click", () => {
     if (!state.simulation?.result) startMatchSimulation();
   });
-  els.continueBracket.addEventListener("click", () => {
-    if (!state.simulation?.completed) return;
-    applyMatchResult(state.simulation.result.won);
-    if (state.bracket.outcome) {
-      renderTournament();
-      state.completedRun = {
-        bracket: state.bracket,
-        finalPicks: { ...state.tournamentPicks },
-        finalResult: state.simulation.result,
-        bracketMarkup: els.bracketBoard.innerHTML,
-      };
-      state.matchDraft = null;
-      state.simulation = null;
-      changeScreen("runSummary");
-      return;
-    }
-    state.matchDraft = null;
-    state.simulation = null;
-    changeScreen("tournament");
+  els.continueBracket.addEventListener("click", continueAfterSimulation);
+  els.simulationResultBanner.addEventListener("click", (event) => {
+    if (event.target.closest("[data-result-continue]")) continueAfterSimulation();
   });
   els.newRun.addEventListener("click", resetRun);
   els.shareRun.addEventListener("click", shareCompletedRun);
+  bindBracketHover(els.bracketBoard);
+  bindBracketHover(els.summaryBracket);
   els.teams.addEventListener("click", (event) => {
     const option = event.target.closest("[data-team-key]");
     if (!option) return;
@@ -691,6 +680,60 @@ function bindEvents() {
       state.swapSourceRole = null;
     }
     renderReview();
+  });
+}
+
+function continueAfterSimulation() {
+  if (!state.simulation?.completed) return;
+  applyMatchResult(state.simulation.result.won);
+  if (state.bracket.outcome) {
+    renderTournament();
+    state.completedRun = {
+      bracket: state.bracket,
+      finalPicks: { ...state.tournamentPicks },
+      finalResult: state.simulation.result,
+      bracketMarkup: els.bracketBoard.innerHTML,
+    };
+    state.matchDraft = null;
+    state.simulation = null;
+    changeScreen("runSummary");
+    return;
+  }
+  state.matchDraft = null;
+  state.simulation = null;
+  changeScreen("tournament");
+}
+
+function bindBracketHover(board) {
+  if (!board) return;
+  board.addEventListener("pointerover", handleBracketPointerOver);
+  board.addEventListener("pointerleave", () => clearBracketHover(board));
+  board.addEventListener("focusin", handleBracketPointerOver);
+  board.addEventListener("focusout", () => clearBracketHover(board));
+}
+
+function handleBracketPointerOver(event) {
+  const board = event.currentTarget;
+  const team = event.target.closest(".bracket-team[data-team-id]");
+  if (!team || !board.contains(team)) return;
+  highlightBracketTeam(board, team.dataset.teamId);
+}
+
+function highlightBracketTeam(board, teamId) {
+  board.classList.toggle("has-hover-path", Boolean(teamId));
+  board.querySelectorAll(".bracket-team[data-team-id]").forEach((team) => {
+    team.classList.toggle("is-hover-team", team.dataset.teamId === teamId);
+  });
+  board.querySelectorAll(".bracket-match").forEach((match) => {
+    const teamWasHere = [...match.querySelectorAll(".bracket-team[data-team-id]")].some((team) => team.dataset.teamId === teamId);
+    match.classList.toggle("is-hover-path", teamWasHere);
+  });
+}
+
+function clearBracketHover(board) {
+  board.classList.remove("has-hover-path");
+  board.querySelectorAll(".is-hover-team, .is-hover-path").forEach((node) => {
+    node.classList.remove("is-hover-team", "is-hover-path");
   });
 }
 
@@ -876,7 +919,7 @@ function renderTournamentPickSlots(selected) {
     const player = playerById(state.roster[role]);
     const assignedChampion = championById(state.tournamentPicks[player.id]);
     return `<button class="pick-assignment-slot ${assignedChampion ? "is-filled has-champion-art" : ""}" type="button" data-tournament-player-id="${html(player.id)}" ${assignedChampion ? `style="${html(championArtStyle(assignedChampion))}"` : ""} ${!selected || assignedChampion ? "disabled" : ""}>
-      ${roleLabel(role, "slot-role-label")}<strong>${html(player.player)}</strong><small>${assignedChampion ? html(assignedChampion.champion) : selected ? championFitLabel(player, selected, role) : "Awaiting champion"}</small>
+      ${roleLabel(role, "slot-role-label")}<strong>${html(player.player)}</strong><small>${assignedChampion ? html(assignedChampion.champion) : selected ? championPowerPreview(player, selected, role) : "Awaiting champion"}</small>
     </button>`;
   }).join("");
 }
@@ -1159,7 +1202,11 @@ function placeholderMatch(first, second, path = false) {
 
 function bracketTeamLine(team, highlight = false) {
   const result = team.result ? `${team.result} · ` : "";
-  return `<div class="bracket-team ${highlight ? "is-player" : ""}"><span>${html(team.name)}</span><small>${result}MSI ${team.year} · ${team.difficulty}</small></div>`;
+  return `<div class="bracket-team ${highlight ? "is-player" : ""}" data-team-id="${html(bracketTeamId(team))}" tabindex="0"><span>${html(team.name)}</span><small>${result}MSI ${team.year} · ${team.difficulty}</small></div>`;
+}
+
+function bracketTeamId(team) {
+  return String(team?.id ?? `${team?.name ?? "team"}-${team?.year ?? "year"}`);
 }
 
 function applyMatchResult(won) {
@@ -1425,7 +1472,7 @@ function renderDraftPickAssignment(draft) {
     const player = playerById(state.roster[role]);
     const pickedChampion = championById(draft.userPicks[role]);
     return `<button class="pick-assignment-slot ${pickedChampion ? "is-filled has-champion-art" : ""}" type="button" data-pick-role="${role}" ${pickedChampion ? `style="${html(championArtStyle(pickedChampion))}"` : ""} ${!selected || pickedChampion ? "disabled" : ""}>
-      ${roleLabel(role, "slot-role-label")}<strong>${html(player.player)}</strong><small>${pickedChampion ? html(pickedChampion.champion) : selected ? championFitLabel(player, selected, role) : "Awaiting pick"}</small>
+      ${roleLabel(role, "slot-role-label")}<strong>${html(player.player)}</strong><small>${pickedChampion ? html(pickedChampion.champion) : selected ? championPowerPreview(player, selected, role) : "Awaiting pick"}</small>
     </button>`;
   }).join("");
 }
@@ -1470,11 +1517,20 @@ function championFitLabel(player, champion, assignedRole = player.role) {
   return "Flex risk";
 }
 
+function playerChampionPower(player, champion, role) {
+  if (!player || !champion) return 0;
+  const playerPower = playerOverall(player) - (player.role === role ? 0 : 9);
+  return playerPower * .5 + championOverall(champion) * .3 + playerChampionFitScore(player, champion, role) * .2;
+}
+
+function championPowerPreview(player, champion, role) {
+  return `${championFitLabel(player, champion, role)} · ${Math.round(playerChampionPower(player, champion, role))} power`;
+}
+
 function draftPickPower(role, draft) {
   const player = playerById(state.roster[role]);
   const champion = championById(draft.userPicks[role]);
-  const playerPower = playerOverall(player) - (player.role === role ? 0 : 9);
-  return playerPower * .5 + championOverall(champion) * .3 + playerChampionFitScore(player, champion, role) * .2;
+  return playerChampionPower(player, champion, role);
 }
 
 function draftTeamPower(draft) {
@@ -1489,8 +1545,7 @@ function rivalDraftPower(draft) {
 function tournamentPickPower(role) {
   const player = playerById(state.roster[role]);
   const champion = championById(state.tournamentPicks[player.id]);
-  const playerPower = playerOverall(player) - (player.role === role ? 0 : 9);
-  return playerPower * .5 + championOverall(champion) * .3 + playerChampionFitScore(player, champion, role) * .2;
+  return playerChampionPower(player, champion, role);
 }
 
 function tournamentTeamPower() {
@@ -1829,10 +1884,12 @@ function renderSimulation() {
     : destination === "eliminated" ? `${opponent.name} eliminates ${state.bracket.user.name} from the tournament.` : `${state.bracket.user.name} drops to ${TOURNAMENT_STAGES[destination].label}.`;
   els.simulationResultBanner.hidden = false;
   els.simulationResultBanner.className = `simulation-result-banner ${result.won ? "is-victory" : "is-defeat"}`;
-  els.simulationResultBanner.innerHTML = `<span>${result.won ? "VICTORY" : "DEFEAT"}</span><strong>${html(result.won ? state.bracket.user.name : opponent.name)}</strong><small>${html(finalEvent.clock)} · ${html(result.won ? "Nexus destroyed" : "Nexus lost")}</small>`;
+  const continueLabel = destination === "champion" || destination === "eliminated" ? "View final result" : "Continue to bracket";
+  els.simulationResultBanner.innerHTML = `<div class="result-copy"><span>${result.won ? "VICTORY" : "DEFEAT"}</span><strong>${html(result.won ? state.bracket.user.name : opponent.name)}</strong><small>${html(finalEvent.clock)} · ${html(result.won ? "Nexus destroyed" : "Nexus lost")}</small></div><button class="primary-button result-continue-button" type="button" data-result-continue>${continueLabel} <span>→</span></button>`;
   els.advantageMarker.style.left = `${(result.finalAdvantage + 100) / 2}%`;
   els.simulationEvents.innerHTML = result.events.slice().reverse().map((event, index) => simulationEventRow(event, false, index)).join("");
   els.simulateMatch.hidden = true;
+  els.continueBracket.innerHTML = `${continueLabel} <span>→</span>`;
   els.continueBracket.hidden = false;
 }
 
@@ -1853,7 +1910,7 @@ function renderRunSummary() {
   const wins = bracket.history.filter((match) => match.won).length;
   const losses = bracket.history.length - wins;
   const lastMatch = bracket.history.at(-1);
-  const runStar = calculateRunStar();
+  const runStar = calculateRunStar(finalPicks);
   els.runSummaryEmblem.textContent = state.selectedTeam.source.team.slice(0, 3).toUpperCase();
   els.runSummaryEmblem.className = `review-emblem ${state.selectedTeam.key}`;
   els.runSummaryKicker.textContent = champion ? "MSI CHAMPIONS · RUN COMPLETE" : "RUN COMPLETE · ELIMINATED";
@@ -1880,10 +1937,10 @@ function runRosterCard(role, picks) {
   return `<article class="run-roster-card ${offRole ? "is-offrole" : ""} ${champion ? "has-champion-art" : ""}" ${champion ? `style="${html(championArtStyle(champion))}"` : ""}>${roleLabel(role, "run-role")}<strong>${html(player.player)}</strong><em>${overall} OVR</em><p>${champion ? html(champion.champion) : "No final pick"}</p><small>${offRole ? "Off-role" : "Natural role"}</small></article>`;
 }
 
-function calculateRunStar() {
+function calculateRunStar(picks = state.tournamentPicks) {
   const candidates = ROLES.map((role) => {
     const player = playerById(state.roster[role]);
-    const champion = championById(state.tournamentPicks[player.id]);
+    const champion = championById(picks[player.id]);
     const roleAdjustedOvr = playerOverall(player) - (player.role === role ? 0 : 9);
     const fitScore = playerChampionFitScore(player, champion, role);
     const score = roleAdjustedOvr + championOverall(champion) * .12 + fitScore * .18;
@@ -1904,26 +1961,285 @@ function finalPosition(bracket) {
 async function shareCompletedRun() {
   const run = state.completedRun;
   if (!run) return;
-  const wins = run.bracket.history.filter((match) => match.won).length;
-  const losses = run.bracket.history.length - wins;
-  const result = run.bracket.outcome === "champion" ? "MSI CHAMPIONS" : `Finished ${finalPosition(run.bracket)}`;
-  const runStar = calculateRunStar();
-  const text = `${state.selectedTeam.source.team} · ${result}\nRoad to MSI run: ${wins}-${losses}\nTeam power: ${teamPowerScore()}\nRun star: ${runStar.player.player} on ${runStar.champion?.champion ?? "their tournament pick"}`;
-  if (navigator.share) {
-    try {
-      await navigator.share({ title: "Road to MSI", text });
-      els.shareRun.textContent = "Shared";
-      window.setTimeout(() => { els.shareRun.textContent = "Share result"; }, 1800);
-      return;
-    } catch {
+  const details = runShareDetails(run);
+  els.shareRun.disabled = true;
+  els.shareRun.textContent = "Building image";
+  let imageBlob = null;
+  try {
+    imageBlob = await createRunShareImageBlob(run, details);
+    const imageFile = new File([imageBlob], SHARE_IMAGE_NAME, { type: "image/png" });
+    const imageShare = { title: "Road to MSI", text: details.text, files: [imageFile] };
+    if (navigator.canShare?.(imageShare)) {
+      await navigator.share(imageShare);
+      setShareButtonStatus("Image shared");
       return;
     }
+    if (navigator.share) {
+      await navigator.share({ title: "Road to MSI", text: details.text });
+      downloadBlob(imageBlob, SHARE_IMAGE_NAME);
+      setShareButtonStatus("Image downloaded");
+      return;
+    }
+    downloadBlob(imageBlob, SHARE_IMAGE_NAME);
+    await copyRunShareText(details.text);
+    setShareButtonStatus("Image downloaded");
+  } catch (error) {
+    if (error?.name !== "AbortError") {
+      if (imageBlob) downloadBlob(imageBlob, SHARE_IMAGE_NAME);
+      await copyRunShareText(details.text);
+      setShareButtonStatus(imageBlob ? "Image downloaded" : "Text copied");
+    }
+  } finally {
+    els.shareRun.disabled = false;
   }
-  if (navigator.clipboard?.writeText) {
+}
+
+function runShareDetails(run) {
+  const wins = run.bracket.history.filter((match) => match.won).length;
+  const losses = run.bracket.history.length - wins;
+  const champion = run.bracket.outcome === "champion";
+  const position = finalPosition(run.bracket);
+  const result = champion ? "MSI CHAMPIONS" : `Finished ${position}`;
+  const runStar = calculateRunStar(run.finalPicks);
+  const teamName = run.bracket.user.name;
+  const teamPower = teamPowerScore();
+  return {
+    champion,
+    position,
+    result,
+    wins,
+    losses,
+    record: `${wins}-${losses}`,
+    runStar,
+    teamName,
+    teamPower,
+    title: champion ? `${teamName} conquered MSI.` : `${teamName}'s run is over.`,
+    subtitle: champion ? "An unforgettable roster, a winning draft and a completed road to glory." : "The bracket closes here, but every run creates a new story.",
+    text: `${teamName} · ${result}\nRoad to MSI run: ${wins}-${losses}\nTeam power: ${teamPower}\nRun star: ${runStar.player.player} on ${runStar.champion?.champion ?? "their tournament pick"}`,
+  };
+}
+
+async function copyRunShareText(text) {
+  if (!navigator.clipboard?.writeText) return false;
+  try {
     await navigator.clipboard.writeText(text);
-    els.shareRun.textContent = "Copied to clipboard";
-    window.setTimeout(() => { els.shareRun.textContent = "Share result"; }, 1800);
+    return true;
+  } catch {
+    return false;
   }
+}
+
+function setShareButtonStatus(label) {
+  els.shareRun.textContent = label;
+  window.setTimeout(() => { els.shareRun.textContent = "Share image"; }, 1900);
+}
+
+async function createRunShareImageBlob(run, details) {
+  const canvas = document.createElement("canvas");
+  canvas.width = SHARE_IMAGE_WIDTH;
+  canvas.height = SHARE_IMAGE_HEIGHT;
+  const ctx = canvas.getContext("2d");
+  drawShareBackground(ctx, canvas.width, canvas.height);
+  drawShareHero(ctx, run, details);
+  drawShareMetrics(ctx, details);
+  drawShareRoster(ctx, run);
+  drawShareHistory(ctx, run);
+  return canvasToBlob(canvas);
+}
+
+function drawShareBackground(ctx, width, height) {
+  ctx.fillStyle = "#101010";
+  ctx.fillRect(0, 0, width, height);
+  ctx.save();
+  ctx.strokeStyle = "rgba(241,238,231,.06)";
+  ctx.lineWidth = 1;
+  for (let offset = -height; offset < width; offset += 9) {
+    ctx.beginPath();
+    ctx.moveTo(offset, height);
+    ctx.lineTo(offset + height, 0);
+    ctx.stroke();
+  }
+  ctx.restore();
+  const glow = ctx.createLinearGradient(0, 0, width, 0);
+  glow.addColorStop(0, "rgba(239,68,58,.16)");
+  glow.addColorStop(.55, "rgba(16,16,16,0)");
+  glow.addColorStop(1, "rgba(234,255,50,.16)");
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, width, height);
+}
+
+function drawShareHero(ctx, run, details) {
+  ctx.strokeStyle = "#ef443a";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(38, 38, 84, 84);
+  ctx.fillStyle = "rgba(239,68,58,.08)";
+  ctx.fillRect(39, 39, 82, 82);
+  ctx.fillStyle = "#ef443a";
+  ctx.font = "700 24px Impact, Arial Black, sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(run.bracket.user.name.slice(0, 3).toUpperCase(), 80, 82);
+
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = "#ef443a";
+  ctx.font = "900 12px Arial, sans-serif";
+  ctx.fillText(details.champion ? "MSI CHAMPIONS · RUN COMPLETE" : "RUN COMPLETE · ELIMINATED", 150, 39);
+  fitCanvasText(ctx, details.title.toUpperCase(), 150, 104, 820, 70, 40, "Impact, Arial Black, sans-serif");
+  ctx.fillStyle = "#b7b5ad";
+  ctx.font = "400 15px Arial, sans-serif";
+  drawCanvasText(ctx, details.subtitle, 150, 132, 760);
+
+  ctx.textAlign = "right";
+  ctx.fillStyle = "#b7b5ad";
+  ctx.font = "900 11px Arial, sans-serif";
+  ctx.fillText("FINAL POSITION", 1168, 56);
+  ctx.fillStyle = "#f1eee7";
+  ctx.font = "700 56px Impact, Arial Black, sans-serif";
+  ctx.fillText(details.position, 1168, 96);
+  ctx.fillStyle = "#b7b5ad";
+  ctx.font = "900 11px Arial, sans-serif";
+  ctx.fillText(`${details.record} match record`, 1168, 116);
+  ctx.textAlign = "left";
+}
+
+function drawShareMetrics(ctx, details) {
+  const metrics = [
+    ["TEAM POWER", details.teamPower],
+    ["WINS", details.wins],
+    ["RUN STAR", `${details.runStar.player.player} · ${details.runStar.champion?.champion ?? "No pick"}`],
+    ["RESULT", details.result],
+  ];
+  const startX = 38;
+  const y = 160;
+  const gap = 10;
+  const cardW = (SHARE_IMAGE_WIDTH - startX * 2 - gap * 3) / 4;
+  metrics.forEach(([label, value], index) => {
+    const x = startX + index * (cardW + gap);
+    ctx.strokeStyle = "rgba(241,238,231,.22)";
+    ctx.strokeRect(x, y, cardW, 86);
+    ctx.fillStyle = "rgba(16,16,16,.72)";
+    ctx.fillRect(x + 1, y + 1, cardW - 2, 84);
+    ctx.fillStyle = "#b7b5ad";
+    ctx.font = "900 10px Arial, sans-serif";
+    ctx.fillText(label, x + 14, y + 25);
+    ctx.fillStyle = index === 3 ? "#f1eee7" : "#eaff32";
+    fitCanvasText(ctx, String(value), x + 14, y + 62, cardW - 28, 24, 18, index === 2 ? "Arial Black, Arial, sans-serif" : "Impact, Arial Black, sans-serif");
+  });
+}
+
+function drawShareRoster(ctx, run) {
+  drawPosterSection(ctx, 38, 264, 1124, 234, "YOUR FINAL ROSTER", "THE FIVE WHO CARRIED THE CREST");
+  const gap = 9;
+  const cardW = (1124 - gap * 4 - 40) / 5;
+  ROLES.forEach((role, index) => {
+    const player = playerById(state.roster[role]);
+    const champion = championById(run.finalPicks[player.id]);
+    const offRole = player.role !== role;
+    const x = 58 + index * (cardW + gap);
+    const y = 352;
+    ctx.strokeStyle = offRole ? "#ef443a" : "#eaff32";
+    ctx.strokeRect(x, y, cardW, 124);
+    ctx.fillStyle = offRole ? "rgba(239,68,58,.11)" : "rgba(234,255,50,.08)";
+    ctx.fillRect(x + 1, y + 1, cardW - 2, 122);
+    ctx.fillStyle = "#b7b5ad";
+    ctx.font = "900 10px Arial, sans-serif";
+    ctx.fillText(ROLE_LABELS[role].toUpperCase(), x + 13, y + 25);
+    ctx.fillStyle = "#f1eee7";
+    fitCanvasText(ctx, player.player, x + 13, y + 52, cardW - 26, 22, 16, "Arial Black, Arial, sans-serif");
+    ctx.fillStyle = "#f1eee7";
+    ctx.font = "900 12px Arial, sans-serif";
+    ctx.fillText(`${playerOverall(player) - (offRole ? 9 : 0)} OVR`, x + 13, y + 73);
+    ctx.fillStyle = "#eaff32";
+    drawCanvasText(ctx, champion?.champion ?? "No final pick", x + 13, y + 94, cardW - 26);
+    ctx.fillStyle = "#b7b5ad";
+    ctx.font = "400 10px Arial, sans-serif";
+    ctx.fillText(offRole ? "Off-role" : "Natural role", x + 13, y + 112);
+  });
+}
+
+function drawShareHistory(ctx, run) {
+  drawPosterSection(ctx, 38, 510, 1124, 244, "RUN HISTORY", "YOUR BRACKET PATH");
+  run.bracket.history.forEach((match, index) => {
+    const y = 594 + index * 32;
+    ctx.fillStyle = index % 2 ? "rgba(22,22,22,.74)" : "rgba(241,238,231,.035)";
+    ctx.fillRect(58, y, 1084, 28);
+    ctx.fillStyle = match.won ? "#eaff32" : "#ef443a";
+    ctx.fillRect(58, y, 4, 28);
+    ctx.fillStyle = "#b7b5ad";
+    ctx.font = "900 12px Arial, sans-serif";
+    ctx.fillText(String(index + 1), 72, y + 19);
+    ctx.fillStyle = "#f1eee7";
+    ctx.font = "900 13px Arial, sans-serif";
+    ctx.fillText(TOURNAMENT_STAGES[match.stage].label, 110, y + 19);
+    ctx.fillStyle = "#b7b5ad";
+    ctx.font = "400 12px Arial, sans-serif";
+    drawCanvasText(ctx, `${match.won ? "Won" : "Lost"} vs ${match.opponent.name} · MSI ${match.opponent.year}`, 480, y + 19, 500);
+    ctx.fillStyle = match.won ? "#eaff32" : "#ef443a";
+    ctx.font = "900 13px Arial, sans-serif";
+    ctx.textAlign = "right";
+    ctx.fillText(match.won ? "W" : "L", 1128, y + 19);
+    ctx.textAlign = "left";
+  });
+}
+
+function drawPosterSection(ctx, x, y, width, height, kicker, title) {
+  ctx.strokeStyle = "rgba(241,238,231,.24)";
+  ctx.strokeRect(x, y, width, height);
+  ctx.fillStyle = "rgba(16,16,16,.74)";
+  ctx.fillRect(x + 1, y + 1, width - 2, height - 2);
+  ctx.fillStyle = "#ef443a";
+  ctx.fillRect(x, y, width * .34, 4);
+  ctx.fillStyle = "#eaff32";
+  ctx.fillRect(x + width * .34, y, width * .18, 4);
+  ctx.fillStyle = "#ef443a";
+  ctx.font = "900 12px Arial, sans-serif";
+  ctx.fillText(kicker, x + 20, y + 34);
+  ctx.fillStyle = "#f1eee7";
+  ctx.font = "700 24px Impact, Arial Black, sans-serif";
+  ctx.fillText(title, x + 20, y + 68);
+}
+
+function fitCanvasText(ctx, text, x, y, maxWidth, startSize, minSize, family) {
+  let size = startSize;
+  do {
+    ctx.font = `700 ${size}px ${family}`;
+    size -= 2;
+  } while (ctx.measureText(text).width > maxWidth && size >= minSize);
+  drawCanvasText(ctx, text, x, y, maxWidth);
+}
+
+function drawCanvasText(ctx, text, x, y, maxWidth) {
+  const source = String(text ?? "");
+  if (ctx.measureText(source).width <= maxWidth) {
+    ctx.fillText(source, x, y);
+    return;
+  }
+  let copy = source;
+  while (copy.length > 1 && ctx.measureText(`${copy}...`).width > maxWidth) {
+    copy = copy.slice(0, -1);
+  }
+  ctx.fillText(`${copy}...`, x, y);
+}
+
+function canvasToBlob(canvas) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) resolve(blob);
+      else reject(new Error("Could not create share image."));
+    }, "image/png");
+  });
+}
+
+function downloadBlob(blob, fileName) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1200);
 }
 
 function reviewCard(player, assignedRole, index) {
