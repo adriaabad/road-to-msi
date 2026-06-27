@@ -56,6 +56,7 @@ main { position: relative; z-index: 1; width: min(1170px, calc(100% - 40px)); mi
 .footer-copy { display: grid; gap: 5px; min-width: 0; line-height: 1.45; }
 .footer-copy a { color: var(--ink); font-weight: 850; text-decoration: none; }
 .footer-copy a:hover { color: var(--cyan); }
+.riot-disclaimer { max-width: 800px; color: #7e7b75; font-size: 10px; line-height: 1.45; }
 .footer-links { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
 .footer-data-link { min-height: 34px; padding-inline: 13px; font-size: 10px; text-decoration: none; }
 .screen[hidden] { display: none; }
@@ -202,10 +203,10 @@ h2 { margin-bottom: 0; font-size: 22px; letter-spacing: -.015em; }
 .review-emblem.wildcard { border-color: var(--gold); color: var(--gold); }
 .review-hero h1 { margin-bottom: 7px; font-size: clamp(36px, 4.5vw, 60px); }
 .review-hero p:not(.eyebrow) { margin-bottom: 0; color: var(--muted); font-size: 14px; }
-.chemistry-summary { display: grid; justify-items: end; }
-.chemistry-summary span, .chemistry-summary small { color: var(--muted); font-size: 10px; font-weight: 850; letter-spacing: .1em; }
-.chemistry-summary strong { color: var(--green); font-size: 48px; line-height: .9; letter-spacing: -.06em; }
-.chemistry-summary small { margin-top: 7px; color: var(--green); }
+.team-power-summary { display: grid; justify-items: end; }
+.team-power-summary span, .team-power-summary small { color: var(--muted); font-size: 10px; font-weight: 850; letter-spacing: .1em; }
+.team-power-summary strong { color: var(--green); font-size: 48px; line-height: .9; letter-spacing: -.06em; }
+.team-power-summary small { margin-top: 7px; color: var(--green); }
 .review-team { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
 .review-player { width: 100%; min-height: 228px; display: grid; align-content: start; padding: 15px; border: 1px solid rgba(94,211,154,.46); border-radius: 10px; color: var(--ink); background: linear-gradient(135deg, rgba(24, 62, 61, .72), rgba(15, 29, 47, .96)); text-align: left; }
 .review-player.is-offrole { border-color: rgba(241,189,94,.72); background: linear-gradient(135deg, rgba(75, 56, 26, .64), rgba(28, 31, 45, .95)); }
@@ -528,6 +529,20 @@ h2 { margin-bottom: 0; font-size: 22px; letter-spacing: -.015em; }
 .lineup-row { border-color: rgba(234,255,50,.25); }
 .lineup-row.is-rival { border-color: rgba(239,68,58,.25); }
 
+.champion-card, .pick-assignment-slot, .review-player, .lineup-row, .run-roster-card { position: relative; overflow: hidden; }
+.has-champion-art::before, .has-champion-art::after { content: ""; position: absolute; pointer-events: none; }
+.has-champion-art::before { z-index: 0; top: 0; right: -8%; bottom: 0; width: 76%; background: var(--champion-art) 56% center / cover no-repeat; opacity: .43; filter: saturate(1.12) contrast(1.06); transform-origin: center; }
+.has-champion-art::after { z-index: 0; inset: 0; background: linear-gradient(90deg, rgba(16,16,16,.98) 0%, rgba(16,16,16,.86) 46%, rgba(16,16,16,.42) 72%, rgba(16,16,16,.14) 100%); }
+.has-champion-art > * { position: relative; z-index: 1; }
+.champion-card.has-champion-art::before { right: -10%; width: 86%; opacity: .46; }
+.champion-card.has-champion-art::after { background: linear-gradient(90deg, rgba(16,16,16,.98) 0%, rgba(16,16,16,.82) 48%, rgba(16,16,16,.3) 100%); }
+.champion-card.is-selected.has-champion-art::before { opacity: .68; filter: saturate(1.24) contrast(1.09); }
+.pick-assignment-slot.has-champion-art::before, .lineup-row.has-champion-art::before, .run-roster-card.has-champion-art::before { right: -10%; width: 82%; opacity: .38; }
+.review-player.has-champion-art::before { right: -2%; width: 96%; background-position: 50% center; opacity: .42; }
+.pick-assignment.has-selected-champion-art::before { z-index: 2; }
+.pick-assignment.has-selected-champion-art::after { content: ""; position: absolute; z-index: 0; top: 0; right: 0; bottom: 0; width: min(58%, 460px); background: var(--selected-champion-art) center / cover no-repeat; opacity: .34; filter: blur(3px) saturate(1.12) contrast(1.03); transform: scale(1.035); transform-origin: center; pointer-events: none; -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.18) 18%, rgba(0,0,0,.78) 36%, #000 58%); mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.18) 18%, rgba(0,0,0,.78) 36%, #000 58%); }
+.pick-assignment.has-selected-champion-art > * { position: relative; z-index: 1; }
+
 .simulation-power > div, .simulation-livebar > div, .advantage-track, .simulation-event, .run-metrics > div, .run-roster-card, .run-history-row { border-radius: 0; background: rgba(22,22,22,.88); }
 .simulation-power strong, .match-phase strong, .simulation-event b, .run-metrics strong { color: var(--cyan); }
 .simulation-power > div:last-child strong, .simulation-event.is-rival b, .run-history-row.is-loss b { color: var(--red); }
@@ -669,7 +684,7 @@ h2 { margin-bottom: 0; font-size: 22px; letter-spacing: -.015em; }
   .role-placement { grid-template-columns: repeat(5, minmax(115px, 1fr)); overflow-x: auto; padding-bottom: 5px; }
   .review-hero { grid-template-columns: 70px 1fr; }
   .review-emblem { width: 65px; height: 65px; font-size: 16px; }
-  .chemistry-summary { grid-column: 1 / -1; justify-items: start; }
+  .team-power-summary { grid-column: 1 / -1; justify-items: start; }
   .review-team { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .review-footer { align-items: start; flex-direction: column; }
   .tournament-heading { align-items: start; flex-direction: column; }

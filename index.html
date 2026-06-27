@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#090e1b">
     <title>Road to MSI</title>
-    <link rel="stylesheet" href="styles.css?v=25">
+    <link rel="stylesheet" href="styles.css?v=29">
     <!-- Cloudflare Web Analytics -->
     <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token":"1d2fa0e4ed1d4e73a9a6348299b69774"}'></script>
     <!-- End Cloudflare Web Analytics -->
@@ -50,21 +50,21 @@
             <article><span>01</span><div><strong>Choose a crest</strong><p>Your identity supplies an opening team bonus.</p></div></article>
             <article><span>02</span><div><strong>Build the roster</strong><p>Five player packs appear. Pick one card, then assign their role - off-role is possible, but risky.</p></div></article>
             <article><span>03</span><div><strong>Lock tournament picks</strong><p>Choose five champions and assign one to each player. Those picks stay locked for the full run.</p></div></article>
-            <article><span>04</span><div><strong>Play out the match</strong><p>Draft power, player synergy and chemistry shape the simulation.</p></div></article>
+            <article><span>04</span><div><strong>Play out the match</strong><p>Team Power shapes the simulation from roster build to Nexus.</p></div></article>
             <article><span>05</span><div><strong>Survive the bracket</strong><p>One loss sends you to Lower Bracket. A second loss ends the run; win the final to claim MSI.</p></div></article>
           </div>
           <section class="tutorial-scoring" aria-labelledby="tutorial-scoring-title">
             <p class="eyebrow">TEAM SCORE · QUICK REFERENCE</p>
             <h3 id="tutorial-scoring-title">What makes a strong team.</h3>
-            <div class="score-formula"><span>50% PLAYER</span><b>+</b><span>30% CHAMPION</span><b>+</b><span>20% SYNERGY</span></div>
+            <div class="score-formula"><span>50% PLAYER</span><b>+</b><span>30% CHAMPION</span><b>+</b><span>20% FIT</span></div>
             <div class="tutorial-score-grid">
               <article><strong>Player OVR</strong><p>Win rate, KDA, kill participation, damage, champion pool and match experience.</p></article>
-              <article><strong>Role fit</strong><p>Off-role costs player power. A champion naturally played in that position adds <b>+2 chemistry</b>.</p></article>
-              <article><strong>Team links</strong><p>Same historical team, shared regions, natural roles and crest connections all raise chemistry.</p></article>
+              <article><strong>Role fit</strong><p>Off-role costs Team Power. Natural champion picks raise the same global rating.</p></article>
+              <article><strong>Team links</strong><p>Same historical team, shared regions, natural roles and crest connections all raise Team Power.</p></article>
             </div>
             <div class="region-rules">
               <strong>REGION MIX</strong>
-              <span class="is-positive">Shared region · +1 chemistry per teammate</span>
+              <span class="is-positive">Shared region · Team Power boost</span>
               <span class="is-positive">5 different regions · +15 Global lineup</span>
               <span class="is-negative">4 from one region · -7 Limited international mix</span>
               <span class="is-negative">5 from one region · -12 No international mix</span>
@@ -137,7 +137,7 @@
             <h1 id="review-title">Your team is ready.</h1>
             <p id="review-subtitle">This roster will carry your crest to MSI.</p>
           </div>
-          <div class="chemistry-summary"><span>CHEMISTRY</span><strong id="review-chemistry">--</strong><small id="review-chemistry-label">BUILDING</small></div>
+          <div class="team-power-summary"><span>TEAM POWER</span><strong id="review-team-power">--</strong><small id="review-team-power-label">BUILDING</small></div>
         </div>
         <div id="review-team" class="review-team" aria-label="Roster summary"></div>
         <div class="review-footer">
@@ -261,7 +261,7 @@
         </div>
 
         <section class="run-metrics" aria-label="Run statistics">
-          <div><span>CHEMISTRY</span><strong id="run-chemistry">--</strong></div>
+          <div><span>TEAM POWER</span><strong id="run-team-power">--</strong></div>
           <div><span>WINS</span><strong id="run-wins">0</strong></div>
           <div><span>RUN STAR</span><strong id="run-mvp">--</strong></div>
           <div><span>LAST RIVAL</span><strong id="run-last-rival">--</strong></div>
@@ -292,6 +292,7 @@
       <div class="footer-copy">
         <span>Cards use simplified MSI tournament data and game-balanced ratings.</span>
         <span>Developed by <a href="https://www.linkedin.com/in/adriaabadjuarez/" target="_blank" rel="noopener">AdriaBad</a>.</span>
+        <span class="riot-disclaimer">Road to MSI is not endorsed by Riot Games and does not reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games and all associated properties are trademarks or registered trademarks of Riot Games, Inc.</span>
       </div>
       <nav class="footer-links" aria-label="Footer links">
         <a class="secondary-button footer-data-link" href="data.html">Data & ratings</a>
@@ -300,6 +301,6 @@
         <a class="secondary-button footer-data-link" href="https://discord.gg/f25UJ8yR" target="_blank" rel="noopener">Want this game?</a>
       </nav>
     </footer>
-    <script src="app.js?v=22"></script>
+    <script src="app.js?v=24"></script>
   </body>
 </html>

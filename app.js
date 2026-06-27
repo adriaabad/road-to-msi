@@ -19,13 +19,13 @@ const IDENTITY_BLUEPRINTS = [
 ];
 
 const TOURNAMENT_STAGES = {
-  "upper-r1": { label: "Upper Bracket · Round 1", win: "upper-semi", loss: "lower-r1", range: [60, 75] },
-  "upper-semi": { label: "Upper Bracket · Semifinal", win: "upper-final", loss: "lower-r2", range: [70, 82] },
-  "upper-final": { label: "Upper Bracket · Final", win: "grand-final", loss: "lower-final", range: [78, 90] },
-  "lower-r1": { label: "Lower Bracket · Round 1", win: "lower-r2", loss: "eliminated", range: [65, 79] },
-  "lower-r2": { label: "Lower Bracket · Round 2", win: "lower-final", loss: "eliminated", range: [72, 86] },
-  "lower-final": { label: "Lower Bracket · Final", win: "grand-final", loss: "eliminated", range: [80, 93] },
-  "grand-final": { label: "Grand Final", win: "champion", loss: "eliminated", range: [88, 99] },
+  "upper-r1": { label: "Upper Bracket · Round 1", win: "upper-semi", loss: "lower-r1" },
+  "upper-semi": { label: "Upper Bracket · Semifinal", win: "upper-final", loss: "lower-r2" },
+  "upper-final": { label: "Upper Bracket · Final", win: "grand-final", loss: "lower-final" },
+  "lower-r1": { label: "Lower Bracket · Round 1", win: "lower-r2", loss: "eliminated" },
+  "lower-r2": { label: "Lower Bracket · Round 2", win: "lower-final", loss: "eliminated" },
+  "lower-final": { label: "Lower Bracket · Final", win: "grand-final", loss: "eliminated" },
+  "grand-final": { label: "Grand Final", win: "champion", loss: "eliminated" },
 };
 
 const MATCH_PHASES = [
@@ -223,6 +223,20 @@ const MATCH_EVENT_BLUEPRINTS = [
   },
 ];
 
+const CHAMPION_SPLASH_BASE = "https://ddragon.leagueoflegends.com/cdn/img/champion/splash";
+const CHAMPION_IMAGE_KEYS = {
+  "Bel'Veth": "Belveth",
+  "Cho'Gath": "Chogath",
+  Fiddlesticks: "FiddleSticks",
+  "Kai'Sa": "Kaisa",
+  "Kha'Zix": "Khazix",
+  LeBlanc: "Leblanc",
+  "Nunu & Willump": "Nunu",
+  "Renata Glasc": "Renata",
+  "Vel'Koz": "Velkoz",
+  Wukong: "MonkeyKing",
+};
+
 const state = {
   dataset: null,
   year: null,
@@ -294,14 +308,15 @@ const els = {
   championReroll: document.querySelector("#champion-reroll"),
   championSelectionInstruction: document.querySelector("#champion-selection-instruction"),
   tournamentChampionOptions: document.querySelector("#tournament-champion-options"),
+  tournamentPickAssignment: document.querySelector(".tournament-pick-assignment"),
   tournamentPickAssignmentTitle: document.querySelector("#tournament-pick-assignment-title"),
   tournamentPickAssignmentNote: document.querySelector("#tournament-pick-assignment-note"),
   tournamentPickSlots: document.querySelector("#tournament-pick-slots"),
   reviewEmblem: document.querySelector("#review-emblem"),
   reviewTitle: document.querySelector("#review-title"),
   reviewSubtitle: document.querySelector("#review-subtitle"),
-  reviewChemistry: document.querySelector("#review-chemistry"),
-  reviewChemistryLabel: document.querySelector("#review-chemistry-label"),
+  reviewTeamPower: document.querySelector("#review-team-power"),
+  reviewTeamPowerLabel: document.querySelector("#review-team-power-label"),
   reviewTeam: document.querySelector("#review-team"),
   reviewSwap: document.querySelector("#review-swap"),
   reviewSwapChampions: document.querySelector("#review-swap-champions"),
@@ -322,6 +337,7 @@ const els = {
   yourDraftList: document.querySelector("#your-draft-list"),
   championSelectionNote: document.querySelector("#champion-selection-note"),
   championPool: document.querySelector("#draft-champion-pool"),
+  pickAssignment: document.querySelector("#screen-match-draft .pick-assignment"),
   pickAssignmentTitle: document.querySelector("#pick-assignment-title"),
   pickAssignmentNote: document.querySelector("#pick-assignment-note"),
   pickAssignmentSlots: document.querySelector("#pick-assignment-slots"),
@@ -349,7 +365,7 @@ const els = {
   runSummaryCopy: document.querySelector("#run-summary-copy"),
   runFinalPosition: document.querySelector("#run-final-position"),
   runRecord: document.querySelector("#run-record"),
-  runChemistry: document.querySelector("#run-chemistry"),
+  runTeamPower: document.querySelector("#run-team-power"),
   runWins: document.querySelector("#run-wins"),
   runMvp: document.querySelector("#run-mvp"),
   runLastRival: document.querySelector("#run-last-rival"),
@@ -397,6 +413,39 @@ function championRoleMarkup(champion) {
   const roles = championRoles(champion);
   if (!roles.length) return `<span class="champion-role-icons is-flex">FLEX</span>`;
   return `<span class="champion-role-icons">${roles.map((role) => roleIcon(role, "role-icon-tiny")).join("")}<span>${html(championRoleText(champion))}</span></span>`;
+}
+
+function championImageKey(champion) {
+  const name = typeof champion === "string" ? champion : champion?.champion;
+  return CHAMPION_IMAGE_KEYS[name] ?? String(name ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9]/g, "");
+}
+
+function championSplashUrl(champion) {
+  return `${CHAMPION_SPLASH_BASE}/${championImageKey(champion)}_0.jpg`;
+}
+
+function championArtStyle(champion, delay = null) {
+  const declarations = [];
+  if (Number.isFinite(delay)) declarations.push(`--delay: ${delay}ms`);
+  if (champion) declarations.push(`--champion-art: url("${championSplashUrl(champion)}")`);
+  return declarations.join("; ");
+}
+
+function selectedChampionArtStyle(champion) {
+  return champion ? `--selected-champion-art: url("${championSplashUrl(champion)}")` : "";
+}
+
+function setSelectedChampionArt(node, champion) {
+  if (!node) return;
+  node.classList.toggle("has-selected-champion-art", Boolean(champion));
+  if (champion) {
+    node.setAttribute("style", selectedChampionArtStyle(champion));
+  } else {
+    node.removeAttribute("style");
+  }
 }
 
 function regionGroup(region) {
@@ -807,12 +856,13 @@ function renderChampionSelection() {
   els.championReroll.disabled = state.rerolls <= 0;
   els.championReroll.textContent = `REROLL · ${state.rerolls}`;
   els.tournamentChampionOptions.innerHTML = candidates.map((champion, index) => tournamentChampionCard(champion, index)).join("");
+  setSelectedChampionArt(els.tournamentPickAssignment, selected);
   renderTournamentPickSlots(selected);
 }
 
 function tournamentChampionCard(champion, index) {
   const selected = state.selectedTournamentChampionId === champion.id;
-  return `<button class="champion-card is-pick-action ${selected ? "is-selected" : ""}" type="button" data-tournament-champion-id="${html(champion.id)}" style="--delay: ${index * 55}ms" aria-pressed="${selected}">
+  return `<button class="champion-card has-champion-art is-pick-action ${selected ? "is-selected" : ""}" type="button" data-tournament-champion-id="${html(champion.id)}" style="${html(championArtStyle(champion, index * 55))}" aria-pressed="${selected}">
     ${championRoleMarkup(champion)}<strong>${html(champion.champion)}</strong><b class="champion-ovr">${championOverall(champion)} <small>OVR</small></b><em>${selected ? "Selected · assign player" : "Choose champion"}</em>
   </button>`;
 }
@@ -820,14 +870,13 @@ function tournamentChampionCard(champion, index) {
 function renderTournamentPickSlots(selected) {
   els.tournamentPickAssignmentTitle.textContent = selected ? `Who will play ${selected.champion}?` : "Choose a champion first.";
   els.tournamentPickAssignmentNote.textContent = selected
-    ? "Comfort picks create stronger synergy. You can swap champions between players in the roster review."
+    ? "Comfort picks and role fit feed one Team Power rating. You can swap champions between players in the roster review."
     : "Each champion remains with its assigned player for the tournament.";
   els.tournamentPickSlots.innerHTML = ROLES.map((role) => {
     const player = playerById(state.roster[role]);
     const assignedChampion = championById(state.tournamentPicks[player.id]);
-    const synergy = selected ? playerChampionSynergy(player, selected, role) : null;
-    return `<button class="pick-assignment-slot ${assignedChampion ? "is-filled" : ""}" type="button" data-tournament-player-id="${html(player.id)}" ${!selected || assignedChampion ? "disabled" : ""}>
-      ${roleLabel(role, "slot-role-label")}<strong>${html(player.player)}</strong><small>${assignedChampion ? html(assignedChampion.champion) : selected ? `Synergy ${synergy}` : "Awaiting champion"}</small>
+    return `<button class="pick-assignment-slot ${assignedChampion ? "is-filled has-champion-art" : ""}" type="button" data-tournament-player-id="${html(player.id)}" ${assignedChampion ? `style="${html(championArtStyle(assignedChampion))}"` : ""} ${!selected || assignedChampion ? "disabled" : ""}>
+      ${roleLabel(role, "slot-role-label")}<strong>${html(player.player)}</strong><small>${assignedChampion ? html(assignedChampion.champion) : selected ? championFitLabel(player, selected, role) : "Awaiting champion"}</small>
     </button>`;
   }).join("");
 }
@@ -898,13 +947,13 @@ function playerBonuses(player) {
 
 function renderReview() {
   const team = state.selectedTeam;
-  const chemistry = chemistryScore();
+  const power = teamPowerScore();
   els.reviewEmblem.textContent = team.source.team.slice(0, 3).toUpperCase();
   els.reviewEmblem.className = `review-emblem ${team.key}`;
   els.reviewTitle.textContent = `${team.source.team}, on the road to MSI.`;
   els.reviewSubtitle.textContent = `${team.label} · ${team.source.region} · ${team.bonusLabel}`;
-  els.reviewChemistry.textContent = chemistry;
-  els.reviewChemistryLabel.textContent = chemistryLabel(chemistry);
+  els.reviewTeamPower.textContent = power;
+  els.reviewTeamPowerLabel.textContent = powerLabel(power);
   els.reviewSwap.textContent = state.swapModeKind === "players" ? "Cancel swap" : "Swap players";
   els.reviewSwap.setAttribute("aria-pressed", String(state.swapModeKind === "players"));
   els.reviewSwapChampions.textContent = state.swapModeKind === "champions" ? "Cancel swap" : "Swap champions";
@@ -927,21 +976,18 @@ function toggleSwapMode(kind) {
 }
 
 function generateBracket() {
+  const userPower = teamPowerScore();
   const user = {
     id: "player-team",
     name: state.selectedTeam.source.team,
     year: state.selectedTeam.source.cardYear,
     region: state.selectedTeam.source.region,
-    difficulty: Math.round(average(ROLES.map((role) => {
-      const player = playerById(state.roster[role]);
-      return playerOverall(player) - (player.role === role ? 0 : 9);
-    }))),
+    difficulty: userPower,
     isPlayer: true,
   };
   const usedTeams = new Set([state.selectedTeam.source.team]);
-  const ranges = [[60, 75], [62, 78], [66, 81], [68, 84], [72, 87], [75, 91], [80, 96]];
-  const opponents = ranges.map(([min, max]) => chooseTournamentOpponent(min, max, usedTeams));
-  return {
+  const opponents = chooseTournamentOpponents(userPower, usedTeams);
+  const bracket = {
     user,
     opponents,
     currentStage: "upper-r1",
@@ -951,16 +997,35 @@ function generateBracket() {
     rivalProgress: {},
     outcome: null,
   };
+  advanceRivalBracket(bracket);
+  return bracket;
 }
 
-function chooseTournamentOpponent(min, max, usedTeams) {
+function chooseTournamentOpponents(userPower, usedTeams) {
   const candidates = state.teamCampaigns
     .filter((team) => !usedTeams.has(team.team))
     .map((team) => ({ ...team, difficulty: teamDifficulty(team) }));
-  const inRange = candidates.filter((team) => team.difficulty >= min && team.difficulty <= max);
-  const target = (min + max) / 2;
-  const shortlist = (inRange.length ? inRange : candidates.slice().sort((a, b) => Math.abs(a.difficulty - target) - Math.abs(b.difficulty - target))).slice(0, 8);
-  const opponent = shortlist[Math.floor(Math.random() * shortlist.length)] ?? candidates[0];
+  const uniqueCandidates = uniqueTeamCampaigns(candidates, usedTeams, userPower);
+  const balanced = uniqueCandidates.filter((team) => Math.abs(team.difficulty - userPower) <= 10);
+  const fallback = uniqueCandidates
+    .slice()
+    .sort((a, b) => Math.abs(a.difficulty - userPower) - Math.abs(b.difficulty - userPower))
+    .slice(0, Math.max(14, Math.min(uniqueCandidates.length, 24)));
+  return shuffle(balanced.length >= 7 ? balanced : fallback).slice(0, 7).map((team) => tournamentTeam(team, usedTeams));
+}
+
+function uniqueTeamCampaigns(candidates, usedTeams, userPower) {
+  const seen = new Set(usedTeams);
+  return shuffle(candidates)
+    .sort((a, b) => Math.abs(a.difficulty - userPower) - Math.abs(b.difficulty - userPower))
+    .filter((team) => {
+      if (seen.has(team.team)) return false;
+      seen.add(team.team);
+      return true;
+    });
+}
+
+function tournamentTeam(opponent, usedTeams) {
   usedTeams.add(opponent.team);
   return {
     id: `${opponent.team}-${opponent.cardYear}`,
@@ -1029,17 +1094,17 @@ function renderTournament() {
       <div class="bracket-rounds">
         <div class="bracket-round lower-round-one">
           <h3>LOWER R1</h3>
-          ${userStageMatch(bracket, "lower-r1", "Loser M1", "Loser M2")}
+          ${stageOrRivalMatch(bracket, "lower-r1", progress.lowerR1Left, "Loser M1", "Loser M2")}
           ${progress.lowerR1Right ? resolvedRivalMatch(progress.lowerR1Right) : placeholderMatch("Loser M3", "Loser M4")}
         </div>
         <div class="bracket-round lower-round-two">
           <h3>LOWER R2</h3>
-          ${userStageMatch(bracket, "lower-r2", "Lower winner", "Upper semifinal loser")}
+          ${stageOrRivalMatch(bracket, "lower-r2", progress.lowerR2Left, "Lower winner", "Upper semifinal loser")}
           ${progress.lowerR2Right ? resolvedRivalMatch(progress.lowerR2Right) : placeholderMatch("Lower winner", "Upper semifinal loser")}
         </div>
         <div class="bracket-round lower-round-three">
           <h3>LOWER FINAL</h3>
-          ${userStageMatch(bracket, "lower-final", "Lower survivor", "Upper final loser")}
+          ${stageOrRivalMatch(bracket, "lower-final", progress.lowerFinal, "Lower survivor", "Upper final loser")}
           ${progress.lowerSurvivor ? resolvedRivalMatch(progress.lowerSurvivor) : ""}
         </div>
       </div>
@@ -1110,26 +1175,24 @@ function applyMatchResult(won) {
     return;
   }
   bracket.currentStage = destination;
-  const usedTeams = new Set([
-    bracket.user.name,
-    ...bracket.opponents.map((opponent) => opponent.name),
-    ...bracket.history.map((match) => match.opponent.name),
-  ]);
-  const [min, max] = TOURNAMENT_STAGES[destination].range;
-  bracket.currentOpponent = chooseTournamentOpponent(min, max, usedTeams);
+  bracket.currentOpponent = bracketOpponentForStage(bracket, destination);
 }
 
 function advanceRivalBracket(bracket) {
   const progress = bracket.rivalProgress;
-  const [, second, third, fourth, fifth, sixth, seventh] = bracket.opponents;
+  const [first, second, third, fourth, fifth, sixth, seventh] = bracket.opponents;
   if (!progress.qf2) progress.qf2 = resolveRivalMatch(second, third);
   if (!progress.qf3) progress.qf3 = resolveRivalMatch(fourth, fifth);
   if (!progress.qf4) progress.qf4 = resolveRivalMatch(sixth, seventh);
   if (!progress.upperSemi2) progress.upperSemi2 = resolveRivalMatch(progress.qf3.winner, progress.qf4.winner);
+  if (!progress.lowerR1Right) progress.lowerR1Right = resolveRivalMatch(progress.qf3.loser, progress.qf4.loser);
 
   const upperR1 = bracket.history.find((match) => match.stage === "upper-r1");
+  if (upperR1?.won && !progress.lowerR1Left) {
+    progress.lowerR1Left = resolveRivalMatch(upperR1.opponent, progress.qf2.loser);
+  }
   if (upperR1 && !upperR1.won && !progress.upperSemi1) {
-    progress.upperSemi1 = resolveRivalMatch(upperR1.opponent, progress.qf2.winner);
+    progress.upperSemi1 = resolveRivalMatch(first, progress.qf2.winner);
   }
 
   const upperSemi = bracket.history.find((match) => match.stage === "upper-semi");
@@ -1140,16 +1203,88 @@ function advanceRivalBracket(bracket) {
     progress.upperFinal = resolveRivalMatch(progress.upperSemi1.winner, progress.upperSemi2.winner);
   }
 
-  const completedPlayerMatches = bracket.history.length;
-  if (completedPlayerMatches >= 1 && !progress.lowerR1Right) {
-    progress.lowerR1Right = resolveRivalMatch(progress.qf3.loser, progress.qf4.loser);
+  if (progress.lowerR1Left && progress.upperSemi2 && !progress.lowerR2Left) {
+    progress.lowerR2Left = resolveRivalMatch(progress.lowerR1Left.winner, progress.upperSemi2.loser);
   }
-  if (completedPlayerMatches >= 2 && !progress.lowerR2Right) {
-    progress.lowerR2Right = resolveRivalMatch(progress.lowerR1Right.winner, progress.upperSemi2.loser);
+
+  const upperSemi1LoserTeam = upperSemi1Loser(bracket);
+  if (upperSemi1LoserTeam && !upperSemi1LoserTeam.isPlayer && progress.lowerR1Right && !progress.lowerR2Right) {
+    progress.lowerR2Right = resolveRivalMatch(progress.lowerR1Right.winner, upperSemi1LoserTeam);
   }
-  if (completedPlayerMatches >= 3 && !progress.lowerSurvivor) {
-    progress.lowerSurvivor = resolveRivalMatch(progress.lowerR2Right.winner, progress.upperSemi2.winner);
+
+  if (progress.lowerR2Left && progress.lowerR2Right && !progress.lowerSurvivor) {
+    progress.lowerSurvivor = resolveRivalMatch(progress.lowerR2Left.winner, progress.lowerR2Right.winner);
   }
+
+  const upperFinal = bracket.history.find((match) => match.stage === "upper-final");
+  if (upperFinal?.won && progress.lowerSurvivor && !progress.lowerFinal) {
+    progress.lowerFinal = resolveRivalMatch(progress.lowerSurvivor.winner, upperFinal.opponent);
+  }
+  if (progress.upperFinal && progress.lowerSurvivor && !progress.lowerFinal) {
+    progress.lowerFinal = resolveRivalMatch(progress.lowerSurvivor.winner, progress.upperFinal.loser);
+  }
+}
+
+function bracketOpponentForStage(bracket, stage) {
+  advanceRivalBracket(bracket);
+  const progress = bracket.rivalProgress;
+  const upperSemi = bracket.history.find((match) => match.stage === "upper-semi");
+  const upperFinal = bracket.history.find((match) => match.stage === "upper-final");
+  const lowerR1 = bracket.history.find((match) => match.stage === "lower-r1");
+  const lowerR2 = bracket.history.find((match) => match.stage === "lower-r2");
+  const lowerFinal = bracket.history.find((match) => match.stage === "lower-final");
+  if (stage === "upper-r1") return bracket.opponents[0];
+  if (stage === "upper-semi") return progress.qf2?.winner;
+  if (stage === "upper-final") return progress.upperSemi2?.winner;
+  if (stage === "lower-r1") return progress.qf2?.loser;
+  if (stage === "lower-r2") {
+    if (upperSemi && !upperSemi.won) return progress.lowerR1Right?.winner;
+    if (lowerR1?.won) return progress.upperSemi2?.loser;
+    return progress.lowerR1Right?.winner ?? progress.upperSemi2?.loser;
+  }
+  if (stage === "lower-final") {
+    if (upperFinal && !upperFinal.won) return progress.lowerSurvivor?.winner;
+    if (lowerR2?.won) return upperFinalLoser(bracket);
+    return progress.lowerFinal?.winner ?? upperFinalLoser(bracket);
+  }
+  if (stage === "grand-final") {
+    if (lowerFinal?.won) return upperFinalWinner(bracket);
+    if (upperFinal?.won) return progress.lowerFinal?.winner;
+    return upperFinalWinner(bracket);
+  }
+  return null;
+}
+
+function userMatchWinner(bracket, match) {
+  return match.won ? bracket.user : match.opponent;
+}
+
+function userMatchLoser(bracket, match) {
+  return match.won ? match.opponent : bracket.user;
+}
+
+function upperSemi1Winner(bracket) {
+  const upperSemi = bracket.history.find((match) => match.stage === "upper-semi");
+  if (upperSemi) return userMatchWinner(bracket, upperSemi);
+  return bracket.rivalProgress.upperSemi1?.winner ?? null;
+}
+
+function upperSemi1Loser(bracket) {
+  const upperSemi = bracket.history.find((match) => match.stage === "upper-semi");
+  if (upperSemi) return userMatchLoser(bracket, upperSemi);
+  return bracket.rivalProgress.upperSemi1?.loser ?? null;
+}
+
+function upperFinalWinner(bracket) {
+  const upperFinal = bracket.history.find((match) => match.stage === "upper-final");
+  if (upperFinal) return userMatchWinner(bracket, upperFinal);
+  return bracket.rivalProgress.upperFinal?.winner ?? null;
+}
+
+function upperFinalLoser(bracket) {
+  const upperFinal = bracket.history.find((match) => match.stage === "upper-final");
+  if (upperFinal) return userMatchLoser(bracket, upperFinal);
+  return bracket.rivalProgress.upperFinal?.loser ?? null;
 }
 
 function resolveRivalMatch(left, right) {
@@ -1243,12 +1378,13 @@ function renderMatchDraft() {
       ? "Assign the selected champion to one of your unfilled roles."
       : "Banned and picked champions leave the pool.";
   els.championPool.innerHTML = draft.pool.map((champion, index) => matchChampionCard(champion, draft, index)).join("");
+  setSelectedChampionArt(els.pickAssignment, championById(draft.selectedChampionId));
   renderDraftPickAssignment(draft);
   renderDraftLineups(draft);
   const power = draft.phase === "ready" ? Math.round(draftTeamPower(draft)) : null;
   els.draftPowerPreview.textContent = draft.phase === "ready"
-    ? `Draft power ${power} · Rival projected power ${Math.round(rivalDraftPower(draft))}`
-    : `${pickedCount} / 5 picks locked · Draft power updates with every pick.`;
+    ? `Team power ${power} · Rival power ${Math.round(rivalDraftPower(draft))}`
+    : `${pickedCount} / 5 picks locked · Team power updates with every pick.`;
   els.lockMatchDraft.disabled = draft.phase !== "ready";
 }
 
@@ -1274,7 +1410,7 @@ function matchChampionCard(champion, draft, index) {
   const disabled = usedByOpponent || usedByPlayer || draft.phase === "ready";
   const actionClass = draft.phase === "ban" ? "is-ban-action" : draft.phase === "pick" || draft.phase === "assign" ? "is-pick-action" : "";
   const stateLabel = usedByOpponent ? (draft.opponentBans.includes(champion.id) ? "Opponent ban" : "Opponent pick") : usedByPlayer ? (draft.playerBans.includes(champion.id) ? "Your ban" : "Your pick") : selected ? "Selected pick" : draft.phase === "ban" ? "Ban champion" : draft.phase === "ready" ? "Locked" : "Pick champion";
-  return `<button class="champion-card ${actionClass} ${selected ? "is-selected" : ""} ${usedByOpponent ? "is-rival-used" : ""} ${usedByPlayer ? "is-player-used" : ""}" type="button" data-champion-id="${html(champion.id)}" style="--delay: ${index * 25}ms" ${disabled ? "disabled" : ""}>
+  return `<button class="champion-card has-champion-art ${actionClass} ${selected ? "is-selected" : ""} ${usedByOpponent ? "is-rival-used" : ""} ${usedByPlayer ? "is-player-used" : ""}" type="button" data-champion-id="${html(champion.id)}" style="${html(championArtStyle(champion, index * 25))}" ${disabled ? "disabled" : ""}>
     ${championRoleMarkup(champion)}<strong>${html(champion.champion)}</strong><b class="champion-ovr">${championOverall(champion)} <small>OVR</small></b><em>${stateLabel}</em>
   </button>`;
 }
@@ -1283,14 +1419,13 @@ function renderDraftPickAssignment(draft) {
   const selected = championById(draft.selectedChampionId);
   els.pickAssignmentTitle.textContent = selected ? `Where will ${selected.champion} go?` : "Choose a champion first.";
   els.pickAssignmentNote.textContent = selected
-    ? "Player comfort picks gain synergy. Any role can use any champion, but fit matters."
+    ? "Comfort picks and role fit feed one Team Power rating. Any role can use any champion, but fit matters."
     : "Every pick needs an unfilled player slot.";
   els.pickAssignmentSlots.innerHTML = ROLES.map((role) => {
     const player = playerById(state.roster[role]);
     const pickedChampion = championById(draft.userPicks[role]);
-    const synergy = selected ? playerChampionSynergy(player, selected) : null;
-    return `<button class="pick-assignment-slot ${pickedChampion ? "is-filled" : ""}" type="button" data-pick-role="${role}" ${!selected || pickedChampion ? "disabled" : ""}>
-      ${roleLabel(role, "slot-role-label")}<strong>${html(player.player)}</strong><small>${pickedChampion ? html(pickedChampion.champion) : selected ? `Synergy ${synergy}` : "Awaiting pick"}</small>
+    return `<button class="pick-assignment-slot ${pickedChampion ? "is-filled has-champion-art" : ""}" type="button" data-pick-role="${role}" ${pickedChampion ? `style="${html(championArtStyle(pickedChampion))}"` : ""} ${!selected || pickedChampion ? "disabled" : ""}>
+      ${roleLabel(role, "slot-role-label")}<strong>${html(player.player)}</strong><small>${pickedChampion ? html(pickedChampion.champion) : selected ? championFitLabel(player, selected, role) : "Awaiting pick"}</small>
     </button>`;
   }).join("");
 }
@@ -1299,40 +1434,51 @@ function renderDraftLineups(draft) {
   els.yourDraftLineup.innerHTML = ROLES.map((role) => {
     const player = playerById(state.roster[role]);
     const champion = championById(draft.userPicks[role]);
-    return lineupRow(role, player.player, champion?.champion ?? "Awaiting pick", "your");
+    return lineupRow(role, player.player, champion, "your");
   }).join("");
   const opponentRoster = (draft.opponent.roster ?? []).slice().sort((a, b) => ROLES.indexOf(a.role) - ROLES.indexOf(b.role));
   els.rivalLineupTitle.textContent = `${draft.opponent.name} · MSI ${draft.opponent.year}`;
   els.rivalDraftLineup.innerHTML = opponentRoster.map((player, index) => {
     const champion = championById(draft.opponentPicks[index]);
-    return lineupRow(player.role, player.player, champion?.champion ?? "Awaiting pick", "rival");
+    return lineupRow(player.role, player.player, champion, "rival");
   }).join("");
 }
 
 function lineupRow(role, player, champion, side) {
-  return `<div class="lineup-row ${side === "rival" ? "is-rival" : ""}">${roleLabel(role, "lineup-role")}<strong>${html(player)}</strong><em>${html(champion)}</em></div>`;
+  const championName = champion?.champion ?? "Awaiting pick";
+  return `<div class="lineup-row ${side === "rival" ? "is-rival" : ""} ${champion ? "has-champion-art" : ""}" ${champion ? `style="${html(championArtStyle(champion))}"` : ""}>${roleLabel(role, "lineup-role")}<strong>${html(player)}</strong><em>${html(championName)}</em></div>`;
 }
 
 function championFitsRole(champion, role) {
   return Object.keys(champion?.roles ?? {}).map(normalizedRole).includes(role);
 }
 
-function playerChampionSynergy(player, champion, assignedRole = player.role) {
+function playerChampionFitScore(player, champion, assignedRole = player.role) {
   const comfort = player.champions?.find((entry) => entry.champion === champion.champion);
   const roleFitBonus = championFitsRole(champion, assignedRole) ? 8 : 0;
   if (comfort) return clamp(Math.round(68 + (comfort.win_rate ?? .5) * 18 + clamp((comfort.kda ?? 0) / 6 * 14) + roleFitBonus), 68, 98);
   return championFitsRole(champion, assignedRole) ? 70 : championFitsRole(champion, player.role) ? 62 : 45;
 }
 
+function championFitLabel(player, champion, assignedRole = player.role) {
+  const comfort = player.champions?.some((entry) => entry.champion === champion.champion);
+  const roleFit = championFitsRole(champion, assignedRole);
+  if (comfort && roleFit) return "Comfort fit";
+  if (comfort) return "Comfort pick";
+  if (roleFit) return "Role fit";
+  if (championFitsRole(champion, player.role)) return "Natural-role pick";
+  return "Flex risk";
+}
+
 function draftPickPower(role, draft) {
   const player = playerById(state.roster[role]);
   const champion = championById(draft.userPicks[role]);
   const playerPower = playerOverall(player) - (player.role === role ? 0 : 9);
-  return playerPower * .5 + championOverall(champion) * .3 + playerChampionSynergy(player, champion, role) * .2;
+  return playerPower * .5 + championOverall(champion) * .3 + playerChampionFitScore(player, champion, role) * .2;
 }
 
 function draftTeamPower(draft) {
-  return average(ROLES.map((role) => draftPickPower(role, draft))) + (chemistryScore() - 60) * .12;
+  return average(ROLES.map((role) => draftPickPower(role, draft))) + (teamCohesionScore() - 60) * .12;
 }
 
 function rivalDraftPower(draft) {
@@ -1344,15 +1490,19 @@ function tournamentPickPower(role) {
   const player = playerById(state.roster[role]);
   const champion = championById(state.tournamentPicks[player.id]);
   const playerPower = playerOverall(player) - (player.role === role ? 0 : 9);
-  return playerPower * .5 + championOverall(champion) * .3 + playerChampionSynergy(player, champion, role) * .2;
+  return playerPower * .5 + championOverall(champion) * .3 + playerChampionFitScore(player, champion, role) * .2;
 }
 
 function tournamentTeamPower() {
-  return average(ROLES.map((role) => tournamentPickPower(role))) + (chemistryScore() - 60) * .12;
+  return average(ROLES.map((role) => tournamentPickPower(role))) + (teamCohesionScore() - 60) * .12;
+}
+
+function teamPowerScore() {
+  return Math.round(tournamentTeamPower());
 }
 
 function rivalTeamPower(opponent) {
-  return opponent.difficulty + 2;
+  return opponent.difficulty;
 }
 
 function championById(id) {
@@ -1467,11 +1617,11 @@ function rivalParticipantForRole(opponent, role) {
 
 function participantImpactScore(participant, side, focus) {
   const player = participant.player;
-  if (!player) return side === "player" ? tournamentTeamPower() : 65;
+  if (!player) return side === "player" ? teamPowerScore() : 65;
   const base = playerOverall(player) - (side === "player" && player.role !== participant.role ? 9 : 0);
   const championPower = participant.champion ? championOverall(participant.champion) : clamp(base + 2, 58, 96);
-  const synergy = participant.champion ? playerChampionSynergy(player, participant.champion, participant.role) : base;
-  return clamp(base * .38 + statScoreForFocus(player, focus) * .32 + championPower * .16 + synergy * .14);
+  const fitScore = participant.champion ? playerChampionFitScore(player, participant.champion, participant.role) : base;
+  return clamp(base * .38 + statScoreForFocus(player, focus) * .32 + championPower * .16 + fitScore * .14);
 }
 
 function sideScoreForRoles(side, roles, opponent, focus) {
@@ -1565,7 +1715,7 @@ function revealNextSimulationEvent(runId) {
 
 function buildSimulationResult() {
   const opponent = state.bracket.currentOpponent;
-  const playerPower = Math.round(tournamentTeamPower());
+  const playerPower = teamPowerScore();
   const rivalPower = Math.round(rivalTeamPower(opponent) + (Math.random() * 8 - 4));
   const winChance = clamp(.5 + (playerPower - rivalPower) / 105, .16, .84);
   const won = Math.random() < winChance;
@@ -1626,7 +1776,7 @@ function renderSimulation() {
   const opponent = state.bracket?.currentOpponent;
   if (!opponent || !simulation) return;
   const stage = TOURNAMENT_STAGES[state.bracket.currentStage];
-  const projectedPlayer = Math.round(tournamentTeamPower());
+  const projectedPlayer = teamPowerScore();
   const projectedRival = Math.round(rivalTeamPower(opponent));
   const result = simulation.result;
   els.simulationStage.textContent = stage.label.toUpperCase();
@@ -1713,7 +1863,7 @@ function renderRunSummary() {
     : "The bracket closes here, but every run creates a new story.";
   els.runFinalPosition.textContent = finalPosition(bracket);
   els.runRecord.textContent = `${wins}-${losses} match record`;
-  els.runChemistry.textContent = chemistryScore();
+  els.runTeamPower.textContent = teamPowerScore();
   els.runWins.textContent = wins;
   els.runMvp.textContent = `${runStar.player.player} · ${runStar.champion?.champion ?? "No pick"}`;
   els.runLastRival.textContent = lastMatch.opponent.name;
@@ -1727,7 +1877,7 @@ function runRosterCard(role, picks) {
   const champion = championById(picks?.[player.id]);
   const offRole = player.role !== role;
   const overall = playerOverall(player) - (offRole ? 9 : 0);
-  return `<article class="run-roster-card ${offRole ? "is-offrole" : ""}">${roleLabel(role, "run-role")}<strong>${html(player.player)}</strong><em>${overall} OVR</em><p>${champion ? html(champion.champion) : "No final pick"}</p><small>${offRole ? "Off-role" : "Natural role"}</small></article>`;
+  return `<article class="run-roster-card ${offRole ? "is-offrole" : ""} ${champion ? "has-champion-art" : ""}" ${champion ? `style="${html(championArtStyle(champion))}"` : ""}>${roleLabel(role, "run-role")}<strong>${html(player.player)}</strong><em>${overall} OVR</em><p>${champion ? html(champion.champion) : "No final pick"}</p><small>${offRole ? "Off-role" : "Natural role"}</small></article>`;
 }
 
 function calculateRunStar() {
@@ -1735,8 +1885,8 @@ function calculateRunStar() {
     const player = playerById(state.roster[role]);
     const champion = championById(state.tournamentPicks[player.id]);
     const roleAdjustedOvr = playerOverall(player) - (player.role === role ? 0 : 9);
-    const synergy = playerChampionSynergy(player, champion, role);
-    const score = roleAdjustedOvr + championOverall(champion) * .12 + synergy * .18;
+    const fitScore = playerChampionFitScore(player, champion, role);
+    const score = roleAdjustedOvr + championOverall(champion) * .12 + fitScore * .18;
     return { player, champion, score };
   });
   return candidates.sort((a, b) => b.score - a.score || a.player.player.localeCompare(b.player.player))[0];
@@ -1758,7 +1908,7 @@ async function shareCompletedRun() {
   const losses = run.bracket.history.length - wins;
   const result = run.bracket.outcome === "champion" ? "MSI CHAMPIONS" : `Finished ${finalPosition(run.bracket)}`;
   const runStar = calculateRunStar();
-  const text = `${state.selectedTeam.source.team} · ${result}\nRoad to MSI run: ${wins}-${losses}\nChemistry: ${chemistryScore()}\nRun star: ${runStar.player.player} on ${runStar.champion?.champion ?? "their tournament pick"}`;
+  const text = `${state.selectedTeam.source.team} · ${result}\nRoad to MSI run: ${wins}-${losses}\nTeam power: ${teamPowerScore()}\nRun star: ${runStar.player.player} on ${runStar.champion?.champion ?? "their tournament pick"}`;
   if (navigator.share) {
     try {
       await navigator.share({ title: "Road to MSI", text });
@@ -1783,7 +1933,7 @@ function reviewCard(player, assignedRole, index) {
   const traits = playerTraits(player, assignedRole);
   const champion = championById(state.tournamentPicks[player.id]);
   return `
-    <button class="review-player ${offRole ? "is-offrole" : ""} ${state.swapSourceRole === assignedRole ? "is-swap-source" : ""}" type="button" data-review-role="${assignedRole}" style="--delay: ${index * 65}ms" ${state.swapMode ? "" : "disabled"}>
+    <button class="review-player ${offRole ? "is-offrole" : ""} ${champion ? "has-champion-art" : ""} ${state.swapSourceRole === assignedRole ? "is-swap-source" : ""}" type="button" data-review-role="${assignedRole}" style="${html(championArtStyle(champion, index * 65))}" ${state.swapMode ? "" : "disabled"}>
       <span class="review-card-header">${roleLabel(assignedRole, "review-role")}<strong>${adjustedOverall} <small>OVR</small></strong></span>
       <span class="review-player-name">${html(player.player)}</span>
       <span class="review-player-meta">${html(player.team)} · Natural: ${ROLE_LABELS[player.role]} · Card: MSI ${player.cardYear}</span>
@@ -1803,7 +1953,7 @@ function playerTraits(player, assignedRole) {
   return traits.slice(0, 3);
 }
 
-function chemistryScore() {
+function teamCohesionScore() {
   const players = ROLES.map((role) => playerById(state.roster[role]));
   const sameSource = players.filter((player) => player.team === state.selectedTeam.source.team).length;
   const naturalRoles = players.filter((player, index) => player.role === ROLES[index]).length;
@@ -1828,11 +1978,11 @@ function matchingPairs(players, match) {
   return players.reduce((total, player, index) => total + players.slice(index + 1).filter((other) => match(player, other)).length, 0);
 }
 
-function chemistryLabel(score) {
-  if (score >= 85) return "TOTAL SYNERGY";
-  if (score >= 70) return "CONNECTED TEAM";
-  if (score >= 55) return "STABLE CHEMISTRY";
-  return "EXPERIMENTAL TEAM";
+function powerLabel(score) {
+  if (score >= 85) return "ELITE POWER";
+  if (score >= 75) return "DANGEROUS TEAM";
+  if (score >= 65) return "SOLID TEAM";
+  return "DEVELOPING TEAM";
 }
 
 function attendanceKey(player) {
